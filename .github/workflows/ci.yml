@@ -31,6 +31,7 @@ jobs:
         os: [ubuntu-latest]
         scala: [2.12.11]
         java: [adopt@1.8, graalvm8@20.1.0]
+        dbms: [mariadb, mysql]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (fast)
@@ -84,6 +85,9 @@ jobs:
         if: env.ENCRYPTION_PASSWORD != null
         run: $SBT ++${{ matrix.scala }} transferCommonResources exportSecretsForActions
 
+      - name: Start ${{ matrix.dbms }} container
+        run: docker-compose up -d ${{ matrix.dbms }}
+
       - name: Check that workflows are up to date
         run: $SBT ++${{ matrix.scala }} githubWorkflowCheck
 
@@ -94,6 +98,12 @@ jobs:
         with:
           name: target-${{ matrix.os }}-${{ matrix.scala }}-${{ matrix.java }}-target
           path: target
+
+      - name: Upload target directory 'destination/target' (${{ matrix.scala }})
+        uses: actions/upload-artifact@v1
+        with:
+          name: target-${{ matrix.os }}-${{ matrix.scala }}-${{ matrix.java }}-destination_target
+          path: destination/target
 
       - name: Upload target directory 'core/target' (${{ matrix.scala }})
         uses: actions/upload-artifact@v1
@@ -170,6 +180,12 @@ jobs:
         with:
           name: target-${{ matrix.os }}-2.12.11-${{ matrix.java }}-target
           path: target
+
+      - name: Download target directory 'destination/target' (2.12.11)
+        uses: actions/download-artifact@v1
+        with:
+          name: target-${{ matrix.os }}-2.12.11-${{ matrix.java }}-destination_target
+          path: destination/target
 
       - name: Download target directory 'core/target' (2.12.11)
         uses: actions/download-artifact@v1
