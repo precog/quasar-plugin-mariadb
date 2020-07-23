@@ -200,4 +200,71 @@ object ConnectionConfigSpec extends Specification {
       cc.validated.toEither must beRight(cc)
     }
   }
+
+  "merge sensitive" >> {
+    "merges undefined sensitive params from other" >> {
+      val a = ConnectionConfig(
+        "jdbc:mariadb://example.com/db",
+        List(
+          DriverParameter("user", "alice"),
+          DriverParameter("useCompression", "true")),
+        None,
+        None)
+
+      val b = ConnectionConfig(
+        "jdbc:mariadb://example.com/db",
+        List(
+          DriverParameter("user", "bob"),
+          DriverParameter("password", "secret"),
+          DriverParameter("useCompression", "false")),
+        None,
+        None)
+
+      val expected =
+        ConnectionConfig(
+          "jdbc:mariadb://example.com/db",
+          List(
+            DriverParameter("password", "secret"),
+            DriverParameter("user", "alice"),
+            DriverParameter("useCompression", "true")),
+          None,
+          None)
+
+      a.mergeSensitive(b) must_=== expected
+    }
+
+    "retains local sensitive params" >> {
+      val a = ConnectionConfig(
+        "jdbc:mariadb://example.com/db",
+        List(
+          DriverParameter("user", "alice"),
+          DriverParameter("password", "toor"),
+          DriverParameter("useCompression", "true")),
+        None,
+        None)
+
+      val b = ConnectionConfig(
+        "jdbc:mariadb://example.com/db",
+        List(
+          DriverParameter("user", "bob"),
+          DriverParameter("password", "secret"),
+          DriverParameter("keyStorePassword", "hiddenkeys"),
+          DriverParameter("useCompression", "false")),
+        None,
+        None)
+
+      val expected =
+        ConnectionConfig(
+          "jdbc:mariadb://example.com/db",
+          List(
+            DriverParameter("keyStorePassword", "hiddenkeys"),
+            DriverParameter("user", "alice"),
+            DriverParameter("password", "toor"),
+            DriverParameter("useCompression", "true")),
+          None,
+          None)
+
+      a.mergeSensitive(b) must_=== expected
+    }
+  }
 }

@@ -1,8 +1,26 @@
 # Quasar MariaDB/MySQL Plugins [![Discord](https://img.shields.io/discord/373302030460125185.svg?logo=discord)](https://discord.gg/pSSqJrr)
 
+## Datasource
+
+The MariaDB/MySQL datasource plugin enables Quasar to load data from MariaDB, MySQL or other protocol-compliant stores. Most native column types are supported with the notable exception of `BINARY`/`BLOB` variants and all `GEOMETRY` types.
+
+### Datasource Configuration
+
+JSON configuration required to construct a MariaDB datasource.
+
+```
+{
+  "connection": <connection-configuration>
+}
+```
+
+* `connection`: A [connection configuration](#connection-configuration) object.
+
 ## Destination
 
 The MariaDB/MySQL destination plugin enables Quasar to load data into MariaDB, MySQL or other protocol-compliant stores. Loading is done via the `LOAD DATA LOCAL INFILE` statement to achieve good performance.
+
+Please ensure the destination server has `LOCAL INFILE` support enabled.
 
 ### Destination Configuration
 

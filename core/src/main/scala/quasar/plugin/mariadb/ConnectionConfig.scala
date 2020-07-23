@@ -29,6 +29,8 @@ import monocle.{Lens, Traversal}
 
 import quasar.plugin.jdbc.Redacted
 
+import shims.monoidToScalaz
+
 final case class ConnectionConfig(
     baseUrl: String,
     parameters: List[DriverParameter],
@@ -37,11 +39,25 @@ final case class ConnectionConfig(
 
   import ConnectionConfig._
 
+  def isSensitive: Boolean =
+    Optics.parameterNames.exist(SensitiveParameters)(this)
+
   def jdbcUrl: String =
     if (parameters.isEmpty)
       baseUrl
     else
       s"$baseUrl?${parameters.map(_.forUrl).intercalate("&")}"
+
+  def mergeSensitive(other: ConnectionConfig): ConnectionConfig = {
+    val namesToMerge =
+      SensitiveParameters.filterNot(name => parameters.exists(_.name == name))
+
+    val paramsToMerge =
+      Optics.driverParameters
+        .foldMap(List(_).filter(p => namesToMerge(p.name)))(other)
+
+    Optics.parameters.modify(paramsToMerge ::: _)(this)
+  }
 
   def sanitized: ConnectionConfig =
     Optics.driverParameters

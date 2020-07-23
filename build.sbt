@@ -35,7 +35,7 @@ lazy val publishTestsSettings = Seq(
 lazy val root = project
   .in(file("."))
   .settings(noPublishSettings)
-  .aggregate(core, destination)
+  .aggregate(core, destination, datasource)
 
 lazy val core = project
   .in(file("core"))
@@ -44,18 +44,42 @@ lazy val core = project
 
     libraryDependencies ++= Seq(
       "com.precog" %% "quasar-plugin-jdbc" % quasarPluginJdbcVersion.value,
+      "com.codecommit" %% "cats-effect-testing-specs2" % "0.4.0" % Test,
       "org.specs2" %% "specs2-core" % specs2Version % Test
     ))
 
 lazy val destination = project
   .in(file("destination"))
-  .dependsOn(core)
+  .dependsOn(core % BothScopes)
   .settings(
     name := "quasar-destination-mariadb",
 
     quasarPluginName := "mariadb",
     quasarPluginQuasarVersion := quasarVersion.value,
     quasarPluginDestinationFqcn := Some("quasar.plugin.mariadb.destination.MariaDbDestinationModule$"),
+
+    quasarPluginDependencies ++= Seq(
+      "com.precog" %% "quasar-plugin-jdbc" % quasarPluginJdbcVersion.value,
+      "org.mariadb.jdbc" % "mariadb-java-client" % mariadbVersion
+    ),
+
+    libraryDependencies ++= Seq(
+      "org.specs2" %% "specs2-core" % specs2Version % Test,
+      "com.codecommit" %% "cats-effect-testing-specs2" % "0.4.0" % Test,
+      "org.apache.logging.log4j" % "log4j-core" % "2.11.2" % Test,
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.11.2" % Test
+    ))
+  .enablePlugins(QuasarPlugin)
+
+lazy val datasource = project
+  .in(file("datasource"))
+  .dependsOn(core % BothScopes)
+  .settings(
+    name := "quasar-datasource-mariadb",
+
+    quasarPluginName := "mariadb",
+    quasarPluginQuasarVersion := quasarVersion.value,
+    quasarPluginDatasourceFqcn := Some("quasar.plugin.mariadb.datasource.MariaDbDatasourceModule$"),
 
     quasarPluginDependencies ++= Seq(
       "com.precog" %% "quasar-plugin-jdbc" % quasarPluginJdbcVersion.value,

@@ -16,17 +16,14 @@
 
 package quasar.plugin.mariadb.destination
 
+import quasar.plugin.mariadb.TestHarness
+
 import scala.{text => _, Stream => _, _}, Predef._
-import scala.concurrent.ExecutionContext
-import scala.util.Random
 
 import java.time._
-import java.util.concurrent.Executors
 
 import cats.data.NonEmptyList
-import cats.effect.{Blocker, IO, Resource}
-import cats.effect.testing.specs2.CatsIO
-import cats.implicits._
+import cats.effect.{IO, Resource}
 
 import doobie._
 import doobie.implicits._
@@ -36,59 +33,22 @@ import fs2._
 
 import org.slf4s.Logging
 
-import org.specs2.mutable.Specification
-import org.specs2.specification.BeforeAll
-
 import quasar.api.Column
 import quasar.api.resource._
-import quasar.connector.{MonadResourceErr, ResourceError}
-import quasar.contrib.scalaz.MonadError_
 import quasar.plugin.jdbc.destination.WriteMode
 
-object MariaDbDestinationSpec extends Specification with CatsIO with BeforeAll with Logging {
+object MariaDbDestinationSpec extends TestHarness with Logging {
   import MariaDbType._
   import Signedness._
-
-  implicit val ioMonadResourceErr: MonadResourceErr[IO] =
-    MonadError_.facet[IO](ResourceError.throwableP)
-
-  val TestDb: String = "precog_test"
-
-  val frag = Fragment.const0(_, None)
-
-  def TestUrl(db: Option[String]): String =
-    s"jdbc:mariadb://127.0.0.1:33306/${db getOrElse ""}?user=root&allowLocalInfile=true"
-
-  def TestXa(jdbcUrl: String): Resource[IO, Transactor[IO]] =
-    Resource.make(IO(Executors.newSingleThreadExecutor()))(p => IO(p.shutdown)) map { ex =>
-      Transactor.fromDriverManager(
-        "org.mariadb.jdbc.Driver",
-        jdbcUrl,
-        Blocker.liftExecutionContext(ExecutionContext.fromExecutorService(ex)))
-    }
-
-  def beforeAll(): Unit = {
-    TestXa(TestUrl(None))
-      .use(frag(s"CREATE DATABASE IF NOT EXISTS $TestDb").update.run.transact(_))
-      .void
-      .unsafeRunSync
-  }
-
-  def table(xa: Transactor[IO]): Resource[IO, (ResourcePath, String)] =
-    Resource.make(
-      IO(s"dest_spec_${Random.alphanumeric.take(6).mkString}"))(
-      name => frag(s"DROP TABLE IF EXISTS $name").update.run.transact(xa).void)
-      .map(n => (ResourcePath.root() / ResourceName(n), n))
 
   def harnessed(
       jdbcUrl: String = TestUrl(Some(TestDb)),
       writeMode: WriteMode = WriteMode.Replace)
       : Resource[IO, (Transactor[IO], MariaDbDestination[IO], ResourcePath, String)] =
-    for {
-      xa <- TestXa(jdbcUrl)
-      (path, name) <- table(xa)
-      dest = new MariaDbDestination(writeMode, xa, log)
-    } yield (xa, dest, path, name)
+    tableHarness(jdbcUrl) map {
+      case (xa, path, name) =>
+        (xa, new MariaDbDestination(writeMode, xa, log), path, name)
+    }
 
   def csv(lines: String*): Stream[IO, Byte] =
     Stream.emits(lines)
