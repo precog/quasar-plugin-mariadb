@@ -31,7 +31,8 @@ final case class DriverParameter(name: String, value: String) {
 object DriverParameter {
   val NameValue: Regex = "^([^=]+)=(.*)$".r
 
-  object Optics {                                                                           val name: Lens[DriverParameter, String] =
+  object Optics {
+    val name: Lens[DriverParameter, String] =
       Lens[DriverParameter, String](_.name)(n => _.copy(name = n))
 
     val value: Lens[DriverParameter, String] =
