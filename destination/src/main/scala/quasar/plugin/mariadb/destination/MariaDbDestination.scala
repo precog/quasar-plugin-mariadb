@@ -67,6 +67,7 @@ final class MariaDbDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer](
 
     tpe match {
       case ColumnType.Boolean => satisfied(BOOLEAN)
+
       case ColumnType.LocalTime => satisfied(TIME)
       case ColumnType.LocalDate => satisfied(DATE)
       case ColumnType.LocalDateTime => satisfied(DATETIME)
@@ -97,6 +98,15 @@ final class MariaDbDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer](
           LONGBLOB,
           TINYTEXT,
           TINYBLOB)
+
+      case ColumnType.OffsetTime =>
+        TypeCoercion.Unsatisfied(List(ColumnType.LocalTime), None)
+
+      case ColumnType.OffsetDate =>
+        TypeCoercion.Unsatisfied(List(ColumnType.LocalDate), None)
+
+      case ColumnType.OffsetDateTime =>
+        TypeCoercion.Unsatisfied(List(ColumnType.LocalDateTime), None)
 
       case _ => TypeCoercion.Unsatisfied(Nil, None)
     }
