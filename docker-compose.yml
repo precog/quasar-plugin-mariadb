@@ -1,0 +1,27 @@
+version: "3.7"
+services:
+  mariadb:
+    image: mariadb:${MARIADB_VERSION:-latest}
+    network_mode: "bridge"
+    ports:
+      - "33306:3306"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+  mysql:
+    image: mysql:${MYSQL_VERSION:-latest}
+    command: --local-infile=ON
+    network_mode: "bridge"
+    ports:
+      - "33306:3306"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+  memsql:
+    image: memsql/cluster-in-a-box:${MEMSQL_VERSION:-latest}
+    network_mode: "bridge"
+    ports:
+      - "33306:3306"
+      - "38080:8080"
+    init: true
+    environment:
+      START_AFTER_INIT: "true"
+      LICENSE_KEY: ${MEMSQL_LICENSE_KEY}
