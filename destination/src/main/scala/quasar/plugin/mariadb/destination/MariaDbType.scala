@@ -77,12 +77,12 @@ object MariaDbType {
   case object DECIMAL extends MariaDbTypeId.HigherKinded(8) {
     val constructor = {
       val precisionParam: Labeled[Formal[Int]] =
-        Labeled("Precision", Formal.integer(Some(Ior.both(0, 65)), None))
+        Labeled("Precision", Formal.integer(Some(Ior.both(0, 65)), None, None))
 
       // TODO: Max scale is 38 for version >= 10.2.1, need to condition on runtime
       //       version if we want to support this, using conservative value for now.
       val scaleParam: Labeled[Formal[Int]] =
-        Labeled("Scale", Formal.integer(Some(Ior.both(0, 30)), None))
+        Labeled("Scale", Formal.integer(Some(Ior.both(0, 30)), None, None))
 
       Constructor.Ternary(
         precisionParam,
@@ -148,13 +148,13 @@ object MariaDbType {
   }
 
   private def LengthCharsParam(max: Int): Labeled[Formal[Int]] =
-    Labeled("Length (characters)", Formal.integer(Some(Ior.both(0, max)), None))
+    Labeled("Length (characters)", Formal.integer(Some(Ior.both(0, max)), None, None))
 
   private val LengthBytesParam: Labeled[Formal[Int]] =
-    Labeled("Length (bytes)", Formal.integer(Some(Ior.left(0)), None))
+    Labeled("Length (bytes)", Formal.integer(Some(Ior.left(0)), None, None))
 
   private val MicrosParam: Labeled[Formal[Int]] =
-    Labeled("Microsecond Precision", Formal.integer(Some(Ior.both(0, 6)), None))
+    Labeled("Microsecond Precision", Formal.integer(Some(Ior.both(0, 6)), None, None))
 
   private def numericConstructor(f: Signedness => MariaDbType): Constructor[MariaDbType] =
     Constructor.Unary(SignednessParam, f)
