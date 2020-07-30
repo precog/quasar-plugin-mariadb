@@ -80,7 +80,7 @@ object MariaDbDatasourceModule extends JdbcDatasourceModule[DatasourceConfig] {
             jdbcUrl,
             Some("org.mariadb.jdbc.Driver")),
           connectionMaxConcurrency = maxConcurrency,
-          connectionReadOnly = false)
+          connectionReadOnly = true)
         .copy(connectionMaxLifetime = maxLifetime)
     }
 
