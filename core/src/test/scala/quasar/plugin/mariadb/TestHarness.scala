@@ -29,6 +29,7 @@ import cats.implicits._
 import doobie._
 import doobie.implicits._
 
+import org.specs2.execute.{AsResult, Result}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAll
 
@@ -39,6 +40,12 @@ import quasar.contrib.scalaz.MonadError_
 trait TestHarness extends Specification with CatsIO with BeforeAll {
   implicit val ioMonadResourceErr: MonadResourceErr[IO] =
     MonadError_.facet[IO](ResourceError.throwableP)
+
+  object Vendors {
+    val MariaDB = "MariaDB"
+    val MySQL = "MySQL"
+    val MemSQL = "MemSQL"
+  }
 
   val TestDb: String = "precog_test"
 
@@ -74,4 +81,23 @@ trait TestHarness extends Specification with CatsIO with BeforeAll {
       xa <- TestXa(jdbcUrl)
       (path, name) <- table(xa)
     } yield (xa, path, name)
+
+  val vendorName: ConnectionIO[String] =
+    HC.getMetaData(FDMD.getDatabaseProductName)
+
+  def onlyVendors[A](xa: Transactor[IO], vs: String*)(a: => IO[A])(implicit A: AsResult[A]): IO[Result] =
+    vendorName.transact(xa) flatMap { name =>
+      if (vs.contains(name))
+        a.map(A.asResult(_))
+      else
+        IO.pure[Result](skipped("Only supported by: " + vs.mkString(", ")))
+    }
+
+  def skipVendors[A](xa: Transactor[IO], vs: String*)(a: => IO[A])(implicit A: AsResult[A]): IO[Result] =
+    vendorName.transact(xa) flatMap { name =>
+      if (vs.contains(name))
+        IO.pure[Result](skipped("Unsupported"))
+      else
+        a.map(A.asResult(_))
+    }
 }

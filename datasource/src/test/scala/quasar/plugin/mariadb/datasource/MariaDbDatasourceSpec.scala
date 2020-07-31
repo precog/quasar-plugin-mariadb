@@ -213,24 +213,26 @@ object MariaDbDatasourceSpec extends TestHarness with Logging {
         }
       }
     }
-/* TODO: Only supported by mariadb
+
     "inet6" >> {
       harnessed() use { case (xa, ds, path, name) =>
-        val setup = for {
-          _ <- (fr"CREATE TABLE" ++ frag(name) ++ fr0" (ip INET6)").update.run
-          _ <- (fr"INSERT INTO" ++ frag(name) ++ fr0" (ip) VALUES ('2001:db8::ff00:42:8329'), ('::192.0.2.128')").update.run
-        } yield ()
+        onlyVendors(xa, Vendors.MariaDB) {
+          val setup = for {
+            _ <- (fr"CREATE TABLE" ++ frag(name) ++ fr0" (ip INET6)").update.run
+            _ <- (fr"INSERT INTO" ++ frag(name) ++ fr0" (ip) VALUES ('2001:db8::ff00:42:8329'), ('::192.0.2.128')").update.run
+          } yield ()
 
-        (setup.transact(xa) >> loadRValues(ds, path)) map { results =>
-          val expected = List(
-            obj("ip" -> rString("2001:db8::ff00:42:8329")),
-            obj("ip" -> rString("::192.0.2.128")))
+          (setup.transact(xa) >> loadRValues(ds, path)) map { results =>
+            val expected = List(
+              obj("ip" -> rString("2001:db8::ff00:42:8329")),
+              obj("ip" -> rString("::192.0.2.128")))
 
-          results must containTheSameElementsAs(expected)
+            results must containTheSameElementsAs(expected)
+          }
         }
       }
     }
-*/
+
     "json" >> {
       harnessed() use { case (xa, ds, path, name) =>
         val js1 = """{"foo": 1, "bar": [2, 3]}"""
