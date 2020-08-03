@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="error" strict="true" name="XMLConfigTest">
+  <Appenders>
+    <Appender type="File" name="File" fileName="/tmp/quasar-datasource-mariadb-test.log">
+      <Layout type="PatternLayout">
+        <Pattern>%d %5p [%t] (%replace{%c}{\\$$}{}) - %m%n</Pattern>
+      </Layout>
+    </Appender>
+  </Appenders>
+
+  <Loggers>
+    <Root level="debug">
+      <AppenderRef ref="File"/>
+    </Root>
+  </Loggers>
+</Configuration>

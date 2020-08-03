@@ -35,7 +35,7 @@ import quasar.connector.MonadResourceErr
 import quasar.connector.destination.{Constructor, Destination, ResultSink}
 import quasar.plugin.jdbc.destination.{JdbcCreateSink, WriteMode}
 
-final class MariaDbDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer](
+private[destination] final class MariaDbDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer](
     writeMode: WriteMode,
     xa: Transactor[F],
     logger: Logger)

@@ -38,7 +38,7 @@ import org.slf4s.Logger
 import quasar.plugin.jdbc.Slf4sLogHandler
 import quasar.plugin.jdbc.destination.WriteMode
 
-object CsvCreateSink {
+private[destination] object CsvCreateSink {
   def apply[F[_]: ConcurrentEffect](
       writeMode: WriteMode,
       xa: Transactor[F],
