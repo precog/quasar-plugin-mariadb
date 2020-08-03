@@ -23,6 +23,7 @@ import scala.util.Either
 
 import java.lang.String
 import java.net.URI
+import java.util.UUID
 
 import argonaut._, Argonaut._, ArgonautCats._
 
@@ -35,7 +36,7 @@ import doobie._
 import quasar.RateLimiting
 import quasar.api.datasource.{DatasourceType, DatasourceError}
 import quasar.api.datasource.DatasourceError.ConfigurationError
-import quasar.connector.{ByteStore, MonadResourceErr}
+import quasar.connector.{ByteStore, ExternalCredentials, MonadResourceErr}
 import quasar.connector.datasource.{LightweightDatasourceModule, Reconfiguration}
 import quasar.plugin.jdbc.{JdbcDiscovery, Redacted, TableType, TransactorConfig}
 import quasar.plugin.jdbc.JdbcDriverConfig
@@ -121,6 +122,7 @@ object MariaDbDatasourceModule extends JdbcDatasourceModule[DatasourceConfig] {
       transactor: Transactor[F],
       rateLimiter: RateLimiting[F, A],
       byteStore: ByteStore[F],
+      externalCredentials: UUID => F[Option[ExternalCredentials[F]]],
       log: Logger)
       : Resource[F, Either[InitError, LightweightDatasourceModule.DS[F]]] = {
 
