@@ -48,10 +48,12 @@ private[destination] final class MariaDbDestination[F[_]: ConcurrentEffect: Mona
 
   val destinationType = MariaDbDestinationModule.destinationType
 
-  val createSink: ResultSink.CreateSink[F, Type] =
-    ResultSink.CreateSink(
-      MariaDbCsvConfig,
-      JdbcCreateSink[F, Type](MariaDbHygiene, logger)(CsvCreateSink(writeMode, xa, logger)))
+  val createSink: ResultSink.CreateSink[F, Type, Byte] = {
+    val jdbcSink =
+      JdbcCreateSink[F, Type](MariaDbHygiene, logger)(CsvCreateSink(writeMode, xa, logger))
+
+    ResultSink.CreateSink((p, ts) => (MariaDbCsvConfig, jdbcSink(p, ts)))
+  }
 
   val sinks = NonEmptyList.one(createSink)
 

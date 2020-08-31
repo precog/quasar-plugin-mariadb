@@ -29,7 +29,7 @@ import cats.implicits._
 import doobie._
 import doobie.implicits._
 
-import fs2.Stream
+import fs2.Pipe
 
 import org.mariadb.jdbc.MariaDbStatement
 
@@ -44,9 +44,8 @@ private[destination] object CsvCreateSink {
       xa: Transactor[F],
       logger: Logger)(
       obj: Either[HI, (HI, HI)],
-      cols: NonEmptyList[(HI, MariaDbType)],
-      bytes: Stream[F, Byte])
-      : Stream[F, Unit] = {
+      cols: NonEmptyList[(HI, MariaDbType)])
+      : Pipe[F, Byte, Unit] = {
 
     val logHandler = Slf4sLogHandler(logger)
 
@@ -99,7 +98,7 @@ private[destination] object CsvCreateSink {
       _ <- loadCsv(bytes)
     } yield ()
 
-    bytes.through(fs2.io.toInputStream[F]).evalMap(doLoad(_).transact(xa))
+    _.through(fs2.io.toInputStream[F]).evalMap(doLoad(_).transact(xa))
   }
 
   ////

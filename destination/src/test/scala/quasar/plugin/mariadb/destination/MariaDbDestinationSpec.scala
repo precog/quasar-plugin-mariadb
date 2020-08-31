@@ -41,6 +41,13 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
   import MariaDbType._
   import Signedness._
 
+  def createSink(
+      dest: MariaDbDestination[IO],
+      path: ResourcePath,
+      cols: NonEmptyList[Column[MariaDbType]])
+      : Pipe[IO, Byte, Unit] =
+    dest.createSink.consume(path, cols)._2
+
   def harnessed(
       jdbcUrl: String = TestUrl(Some(TestDb)),
       writeMode: WriteMode = WriteMode.Replace)
@@ -61,7 +68,7 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
 
     harnessed(writeMode = WriteMode.Replace) use { case (xa, dest, path, tableName) =>
       for {
-        _ <- dest.createSink.consume(path, cols, input).compile.drain
+        _ <- input.through(createSink(dest, path, cols)).compile.drain
         vals <- frag(s"select value from $tableName").query[A].to[List].transact(xa)
       } yield {
         vals must containTheSameElementsAs(values)
@@ -75,7 +82,8 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
     "create" >> {
       "succeeds when table absent" >> {
         harnessed(writeMode = WriteMode.Create) use { case (xa, dest, path, tableName) =>
-          dest.createSink.consume(path, cols, csv("A", "B"))
+          csv("A", "B")
+            .through(createSink(dest, path, cols))
             .compile.drain.attempt.map(_ must beRight)
         }
       }
@@ -83,8 +91,8 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
       "fails when table present" >> {
         harnessed(writeMode = WriteMode.Create) use { case (xa, dest, path, tableName) =>
           for {
-            _ <- dest.createSink.consume(path, cols, csv("A", "B")).compile.drain
-            r <- dest.createSink.consume(path, cols, csv("A", "B")).compile.drain.attempt
+            _ <- csv("A", "B").through(createSink(dest, path, cols)).compile.drain
+            r <- csv("A", "B").through(createSink(dest, path, cols)).compile.drain.attempt
           } yield {
             r must beLeft
           }
@@ -95,7 +103,8 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
     "replace" >> {
       "succeeds when table absent" >> {
         harnessed(writeMode = WriteMode.Replace) use { case (xa, dest, path, tableName) =>
-          dest.createSink.consume(path, cols, csv("A", "B"))
+          csv("A", "B")
+            .through(createSink(dest, path, cols))
             .compile.drain.attempt.map(_ must beRight)
         }
       }
@@ -103,8 +112,8 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
       "succeeds when table present" >> {
         harnessed(writeMode = WriteMode.Replace) use { case (xa, dest, path, tableName) =>
           for {
-            _ <- dest.createSink.consume(path, cols, csv("A", "B")).compile.drain
-            r <- dest.createSink.consume(path, cols, csv("A", "B")).compile.drain.attempt
+            _ <- csv("A", "B").through(createSink(dest, path, cols)).compile.drain
+            r <- csv("A", "B").through(createSink(dest, path, cols)).compile.drain.attempt
           } yield {
             r must beRight
           }
@@ -115,7 +124,8 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
     "truncate" >> {
       "succeeds when table absent" >> {
         harnessed(writeMode = WriteMode.Truncate) use { case (xa, dest, path, tableName) =>
-          dest.createSink.consume(path, cols, csv("A", "B"))
+          csv("A", "B")
+            .through(createSink(dest, path, cols))
             .compile.drain.attempt.map(_ must beRight)
         }
       }
@@ -123,8 +133,8 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
       "succeeds when table present" >> {
         harnessed(writeMode = WriteMode.Truncate) use { case (xa, dest, path, tableName) =>
           for {
-            _ <- dest.createSink.consume(path, cols, csv("A", "B")).compile.drain
-            r <- dest.createSink.consume(path, cols, csv("A", "B")).compile.drain.attempt
+            _ <- csv("A", "B").through(createSink(dest, path, cols)).compile.drain
+            r <- csv("A", "B").through(createSink(dest, path, cols)).compile.drain.attempt
           } yield {
             r must beRight
           }
@@ -140,7 +150,7 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
 
       harnessed() use { case (xa, dest, path, tableName) =>
         for {
-          _ <- dest.createSink.consume(path, cols, input).compile.drain
+          _ <- input.through(createSink(dest, path, cols)).compile.drain
 
           bools <-
             frag(s"select thebool from $tableName")
@@ -228,7 +238,7 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
 
       harnessed() use { case (xa, dest, path, tableName) =>
         for {
-          _ <- dest.createSink.consume(path, cols, input).compile.drain
+          _ <- input.through(createSink(dest, path, cols)).compile.drain
 
           vals <-
             frag(s"select value from $tableName")
@@ -253,7 +263,7 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
 
       harnessed() use { case (xa, dest, path, tableName) =>
         for {
-          _ <- dest.createSink.consume(path, cols, input).compile.drain
+          _ <- input.through(createSink(dest, path, cols)).compile.drain
 
           vals <-
             frag(s"select A, B, C, D from $tableName")
@@ -281,7 +291,7 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
 
       harnessed() use { case (xa, dest, path, tableName) =>
         for {
-          _ <- dest.createSink.consume(path, cols, input).compile.drain
+          _ <- input.through(createSink(dest, path, cols)).compile.drain
 
           vals <-
             frag(s"select A, B, C from $tableName")
