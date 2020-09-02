@@ -29,7 +29,7 @@ JSON configuration required to construct a MariaDB destination.
 ```
 {
   "connection": <connection-configuration>,
-  "writeMode": "create" | "replace" | "truncate"
+  "writeMode": "create" | "replace" | "truncate" | "append"
 }
 ```
 
@@ -38,6 +38,7 @@ JSON configuration required to construct a MariaDB destination.
   * `create`: prevent loading data into an existing table, erroring if it exists
   * `replace`: `DROP` and recreate an existing table prior to loading data
   * `truncate`: `TRUNCATE` an existing table prior to loading data
+  * `append`: appends to an existing table, creating it if it doesn't exist
 
 ## Connection Configuration
 

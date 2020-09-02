@@ -93,6 +93,9 @@ private[destination] object CsvCreateSink {
 
         case WriteMode.Truncate =>
           createTable(ifNotExists = true) >> truncateTable
+
+        case WriteMode.Append =>
+          createTable(ifNotExists = true)
       }
 
       _ <- loadCsv(bytes)

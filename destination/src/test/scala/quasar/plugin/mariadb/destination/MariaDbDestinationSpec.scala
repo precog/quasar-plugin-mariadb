@@ -141,6 +141,27 @@ object MariaDbDestinationSpec extends TestHarness with Logging {
         }
       }
     }
+
+    "append" >> {
+      "succeeds when table absent" >> {
+        harnessed(writeMode = WriteMode.Append) use { case (xa, dest, path, tableName) =>
+          csv("A", "B")
+            .through(createSink(dest, path, cols))
+            .compile.drain.attempt.map(_ must beRight)
+        }
+      }
+
+      "succeeds when table present" >> {
+        harnessed(writeMode = WriteMode.Append) use { case (xa, dest, path, tableName) =>
+          for {
+            _ <- csv("A", "B").through(createSink(dest, path, cols)).compile.drain
+            r <- csv("A", "B").through(createSink(dest, path, cols)).compile.drain.attempt
+          } yield {
+            r must beRight
+          }
+        }
+      }
+    }
   }
 
   "ingest" >> {
