@@ -93,3 +93,4 @@ lazy val datasource = project
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.11.2" % Test
     ))
   .enablePlugins(QuasarPlugin)
+  .evictToLocal("QUASAR_PATH", "connector", true)
