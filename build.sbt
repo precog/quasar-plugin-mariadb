@@ -1,4 +1,4 @@
-ThisBuild / crossScalaVersions := Seq("2.12.11")
+ThisBuild / crossScalaVersions := Seq("2.12.12")
 ThisBuild / scalaVersion := (ThisBuild / crossScalaVersions).value.head
 
 ThisBuild / githubRepository := "quasar-plugin-mariadb"
@@ -20,7 +20,9 @@ ThisBuild / githubWorkflowBuildPreamble +=
     name = Some("Start ${{ matrix.dbms }} container"))
 
 val mariadbVersion = "2.6.0"
-val specs2Version = "4.9.4"
+val specs2Version = "4.10.5"
+val catsEffectTestingSpecs2Version = "0.4.1"
+val log4jVersion = "2.14.0"
 
 lazy val quasarVersion =
   Def.setting[String](managedVersions.value("precog-quasar"))
@@ -44,7 +46,7 @@ lazy val core = project
 
     libraryDependencies ++= Seq(
       "com.precog" %% "quasar-plugin-jdbc" % quasarPluginJdbcVersion.value,
-      "com.codecommit" %% "cats-effect-testing-specs2" % "0.4.0" % Test,
+      "com.codecommit" %% "cats-effect-testing-specs2" % catsEffectTestingSpecs2Version % Test,
       "org.specs2" %% "specs2-core" % specs2Version % Test
     ))
 
@@ -65,9 +67,9 @@ lazy val destination = project
 
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % specs2Version % Test,
-      "com.codecommit" %% "cats-effect-testing-specs2" % "0.4.0" % Test,
-      "org.apache.logging.log4j" % "log4j-core" % "2.11.2" % Test,
-      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.11.2" % Test
+      "com.codecommit" %% "cats-effect-testing-specs2" % catsEffectTestingSpecs2Version % Test,
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Test,
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % log4jVersion % Test
     ))
   .enablePlugins(QuasarPlugin)
 
@@ -88,8 +90,8 @@ lazy val datasource = project
 
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % specs2Version % Test,
-      "com.codecommit" %% "cats-effect-testing-specs2" % "0.4.0" % Test,
-      "org.apache.logging.log4j" % "log4j-core" % "2.11.2" % Test,
-      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.11.2" % Test
+      "com.codecommit" %% "cats-effect-testing-specs2" % catsEffectTestingSpecs2Version % Test,
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Test,
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % log4jVersion % Test
     ))
   .enablePlugins(QuasarPlugin)

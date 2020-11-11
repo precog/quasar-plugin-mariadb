@@ -24,7 +24,6 @@ import java.util.concurrent.Executors
 
 import cats.effect.{Blocker, IO, Resource}
 import cats.effect.testing.specs2.CatsIO
-import cats.implicits._
 
 import doobie._
 import doobie.implicits._
