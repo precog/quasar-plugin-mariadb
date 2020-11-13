@@ -18,7 +18,7 @@ package quasar.plugin.mariadb
 
 import scala.StringContext
 
-import quasar.plugin.jdbc.{Hygiene, Hygienic, Ident}
+import quasar.lib.jdbc.{Hygiene, Hygienic, Ident}
 
 object MariaDbHygiene extends Hygiene {
   final case class HygienicIdent(asIdent: Ident) extends Hygienic {
