@@ -24,8 +24,8 @@ import java.time._
 import doobie.enum.JdbcType
 
 import quasar.common.data.RValue
-import quasar.plugin.jdbc._
-import quasar.plugin.jdbc.datasource._
+import quasar.lib.jdbc._
+import quasar.lib.jdbc.datasource._
 
 object MariaDbRValueColumn extends RValueColumn {
   import java.sql.Types._

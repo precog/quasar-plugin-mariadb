@@ -39,7 +39,7 @@ import quasar.api.resource.ResourcePath
 import quasar.common.data.RValue
 import quasar.connector.QueryResult
 import quasar.connector.datasource.LightweightDatasourceModule
-import quasar.plugin.jdbc.JdbcDiscovery
+import quasar.lib.jdbc.JdbcDiscovery
 import quasar.qscript.InterpretedRead
 
 object MariaDbDatasourceSpec extends TestHarness with Logging {

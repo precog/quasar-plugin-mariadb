@@ -35,8 +35,8 @@ import org.mariadb.jdbc.MariaDbStatement
 
 import org.slf4s.Logger
 
-import quasar.plugin.jdbc.Slf4sLogHandler
-import quasar.plugin.jdbc.destination.WriteMode
+import quasar.lib.jdbc.Slf4sLogHandler
+import quasar.lib.jdbc.destination.WriteMode
 
 private[destination] object CsvCreateSink {
   def apply[F[_]: ConcurrentEffect](

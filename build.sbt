@@ -1,4 +1,4 @@
-ThisBuild / crossScalaVersions := Seq("2.12.11")
+ThisBuild / crossScalaVersions := Seq("2.12.12")
 ThisBuild / scalaVersion := (ThisBuild / crossScalaVersions).value.head
 
 ThisBuild / githubRepository := "quasar-plugin-mariadb"
@@ -20,13 +20,15 @@ ThisBuild / githubWorkflowBuildPreamble +=
     name = Some("Start ${{ matrix.dbms }} container"))
 
 val mariadbVersion = "2.6.0"
-val specs2Version = "4.9.4"
+val specs2Version = "4.10.5"
+val catsEffectTestingSpecs2Version = "0.4.1"
+val log4jVersion = "2.14.0"
 
 lazy val quasarVersion =
   Def.setting[String](managedVersions.value("precog-quasar"))
 
 lazy val quasarPluginJdbcVersion =
-  Def.setting[String](managedVersions.value("precog-quasar-plugin-jdbc"))
+  Def.setting[String](managedVersions.value("precog-quasar-lib-jdbc"))
 
 // Include to also publish a project's tests
 lazy val publishTestsSettings = Seq(
@@ -43,8 +45,8 @@ lazy val core = project
     name := "quasar-plugin-mariadb",
 
     libraryDependencies ++= Seq(
-      "com.precog" %% "quasar-plugin-jdbc" % quasarPluginJdbcVersion.value,
-      "com.codecommit" %% "cats-effect-testing-specs2" % "0.4.0" % Test,
+      "com.precog" %% "quasar-lib-jdbc" % quasarPluginJdbcVersion.value,
+      "com.codecommit" %% "cats-effect-testing-specs2" % catsEffectTestingSpecs2Version % Test,
       "org.specs2" %% "specs2-core" % specs2Version % Test
     ))
 
@@ -59,15 +61,15 @@ lazy val destination = project
     quasarPluginDestinationFqcn := Some("quasar.plugin.mariadb.destination.MariaDbDestinationModule$"),
 
     quasarPluginDependencies ++= Seq(
-      "com.precog" %% "quasar-plugin-jdbc" % quasarPluginJdbcVersion.value,
+      "com.precog" %% "quasar-lib-jdbc" % quasarPluginJdbcVersion.value,
       "org.mariadb.jdbc" % "mariadb-java-client" % mariadbVersion
     ),
 
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % specs2Version % Test,
-      "com.codecommit" %% "cats-effect-testing-specs2" % "0.4.0" % Test,
-      "org.apache.logging.log4j" % "log4j-core" % "2.11.2" % Test,
-      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.11.2" % Test
+      "com.codecommit" %% "cats-effect-testing-specs2" % catsEffectTestingSpecs2Version % Test,
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Test,
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % log4jVersion % Test
     ))
   .enablePlugins(QuasarPlugin)
 
@@ -82,15 +84,15 @@ lazy val datasource = project
     quasarPluginDatasourceFqcn := Some("quasar.plugin.mariadb.datasource.MariaDbDatasourceModule$"),
 
     quasarPluginDependencies ++= Seq(
-      "com.precog" %% "quasar-plugin-jdbc" % quasarPluginJdbcVersion.value,
+      "com.precog" %% "quasar-lib-jdbc" % quasarPluginJdbcVersion.value,
       "org.mariadb.jdbc" % "mariadb-java-client" % mariadbVersion
     ),
 
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % specs2Version % Test,
-      "com.codecommit" %% "cats-effect-testing-specs2" % "0.4.0" % Test,
-      "org.apache.logging.log4j" % "log4j-core" % "2.11.2" % Test,
-      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.11.2" % Test
+      "com.codecommit" %% "cats-effect-testing-specs2" % catsEffectTestingSpecs2Version % Test,
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Test,
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % log4jVersion % Test
     ))
   .enablePlugins(QuasarPlugin)
   .evictToLocal("QUASAR_PATH", "connector", true)
