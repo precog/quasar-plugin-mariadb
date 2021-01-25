@@ -108,7 +108,14 @@ private[destination] object CsvCreateSink {
 
   private def columnSpecs(cols: NonEmptyList[(HI, MariaDbType)]): Fragment =
     Fragments.parentheses(
-      cols
-        .map { case (n, t) => Fragment.const(n.forSql) ++ t.asSql }
+      cols.zipWithIndex
+        .map { case ((n, t), i) =>
+          val base = Fragment.const(n.forSql) ++ t.asSql
+          if (i == 0) {
+            base ++ fr0" PRIMARY KEY"
+          } else {
+            base
+          }
+        }
         .intercalate(fr","))
 }
