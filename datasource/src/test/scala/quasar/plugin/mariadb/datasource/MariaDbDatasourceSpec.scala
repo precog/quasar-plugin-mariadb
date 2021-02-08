@@ -58,7 +58,7 @@ object MariaDbDatasourceSpec extends TestHarness with Logging {
   def loadRValues(ds: DS, p: ResourcePath): IO[List[RValue]] =
     ds.loadFull(InterpretedRead(p, ScalarStages.Id)).value use {
       case Some(QueryResult.Parsed(_, data, _)) =>
-        data.asInstanceOf[Stream[IO, RValue]].compile.to(List)
+        data.data.asInstanceOf[Stream[IO, RValue]].compile.to(List)
 
       case _ => IO.pure(List[RValue]())
     }
