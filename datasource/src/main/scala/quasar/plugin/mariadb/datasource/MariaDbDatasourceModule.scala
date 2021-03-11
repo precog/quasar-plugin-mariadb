@@ -75,14 +75,14 @@ object MariaDbDatasourceModule extends JdbcDatasourceModule[DatasourceConfig] {
       maxConcurrency = cc.maxConcurrency getOrElse DefaultConnectionMaxConcurrency
       maxLifetime = cc.maxLifetime getOrElse DefaultConnectionMaxLifetime
     } yield {
-      TransactorConfig
+      val tc = TransactorConfig
         .withDefaultTimeouts(
           JdbcDriverConfig.JdbcDriverManagerConfig(
             jdbcUrl,
             Some("org.mariadb.jdbc.Driver")),
           connectionMaxConcurrency = maxConcurrency,
           connectionReadOnly = true)
-        .copy(connectionMaxLifetime = maxLifetime)
+      tc.copy(poolConfig = tc.poolConfig.map(_.copy(connectionMaxLifetime = maxLifetime)))
     }
 
   def sanitizeConfig(config: Json): Json =
