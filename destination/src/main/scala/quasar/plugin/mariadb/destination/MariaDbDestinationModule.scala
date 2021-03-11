@@ -66,7 +66,7 @@ object MariaDbDestinationModule extends JdbcDestinationModule[DestinationConfig]
         Either.catchNonFatal(URI.create(connectionString)).leftMap(_ => NonEmptyList.one(
           "Malformed JDBC connection string, ensure any restricted characters are properly escaped"))
 
-      txConfig =
+      tc =
         TransactorConfig
           .withDefaultTimeouts(
             JdbcDriverConfig.JdbcDriverManagerConfig(
@@ -74,7 +74,7 @@ object MariaDbDestinationModule extends JdbcDestinationModule[DestinationConfig]
               Some("org.mariadb.jdbc.Driver")),
             connectionMaxConcurrency = maxConcurrency,
             connectionReadOnly = false)
-          .copy(connectionMaxLifetime = maxLifetime)
+      txConfig = tc.copy(poolConfig = tc.poolConfig.map(_.copy(connectionMaxLifetime = maxLifetime)))
     } yield txConfig
 
   def jdbcDestination[F[_]: ConcurrentEffect: ContextShift: MonadResourceErr: Timer](
