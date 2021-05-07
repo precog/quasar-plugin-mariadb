@@ -23,6 +23,7 @@ import java.time._
 
 import argonaut._, Argonaut._
 
+import cats.data.NonEmptyList
 import cats.effect.{IO, Resource}
 import cats.implicits._
 
@@ -35,17 +36,23 @@ import fs2.Stream
 import org.slf4s.Logging
 
 import quasar.ScalarStages
+import quasar.api.DataPathSegment
+import quasar.api.push.{InternalKey, ExternalOffsetKey}
 import quasar.api.resource.ResourcePath
 import quasar.common.data.RValue
-import quasar.connector.QueryResult
+import quasar.connector.{QueryResult, Offset}
 import quasar.connector.datasource.LightweightDatasourceModule
 import quasar.lib.jdbc.JdbcDiscovery
 import quasar.qscript.InterpretedRead
+
+import skolems.∃
 
 object MariaDbDatasourceSpec extends TestHarness with Logging {
   import RValue._
 
   type DS = LightweightDatasourceModule.DS[IO]
+
+  sequential
 
   def harnessed(jdbcUrl: String = TestUrl(Some(TestDb)))
       : Resource[IO, (Transactor[IO], DS, ResourcePath, String)] =
@@ -63,10 +70,17 @@ object MariaDbDatasourceSpec extends TestHarness with Logging {
       case _ => IO.pure(List[RValue]())
     }
 
-  "loading data" >> {
-    def obj(assocs: (String, RValue)*): RValue =
-      rObject(Map(assocs: _*))
+  def seekRValues(ds: DS, p: ResourcePath, offset: Offset): IO[List[RValue]] =
+    ds.loadFrom(InterpretedRead(p, ScalarStages.Id), offset).value use {
+      case Some(QueryResult.Parsed(_, data, _)) =>
+        data.data.asInstanceOf[Stream[IO, RValue]].compile.to(List)
+      case _ => IO.pure(List[RValue]())
+    }
 
+  def obj(assocs: (String, RValue)*): RValue =
+    rObject(Map(assocs: _*))
+
+  "loading data" >> {
     "boolean" >> {
       harnessed() use { case (xa, ds, path, name) =>
         val setup = for {
@@ -303,6 +317,94 @@ object MariaDbDatasourceSpec extends TestHarness with Logging {
 
         (setup.transact(xa) >> loadRValues(ds, path)) map { results =>
           results must beEmpty
+        }
+      }
+    }
+  }
+  "seek data" >> {
+    import DataPathSegment._
+
+    "errors when path is incorrect" >> {
+      harnessed() use { case (xa, ds, path, name) =>
+        val key = ∃(InternalKey.Actual.string("1"))
+        val twoFields = Offset.Internal(NonEmptyList.of(Field("foo"), Field("bar")), key)
+        val index = Offset.Internal(NonEmptyList.one(Index(0)), key)
+        val all = Offset.Internal(NonEmptyList.one(AllFields), key)
+        val allIndices = Offset.Internal(NonEmptyList.one(AllIndices), key)
+        val external = Offset.External(ExternalOffsetKey(Array(0x01, 0x01)))
+
+        for {
+          two <- seekRValues(ds, path, twoFields).attempt
+          ind <- seekRValues(ds, path, index).attempt
+          allF <- seekRValues(ds, path, all).attempt
+          allI <- seekRValues(ds, path, allIndices).attempt
+          ext <- seekRValues(ds, path, external).attempt
+        } yield {
+          two must beLeft
+          ind must beLeft
+          allF must beLeft
+          allI must beLeft
+          ext must beLeft
+        }
+      }
+    }
+    "string offset" >> {
+      harnessed() use { case (xa, ds, path, name) =>
+        val setup =
+          (fr"CREATE TABLE" ++ frag(name) ++ fr0" (id INT, off TEXT)").update.run >>
+          (fr"INSERT INTO" ++ frag(name) ++ fr0" VALUES (0, 'foo'), (1, 'bar'), (2, 'baz')").update.run
+
+        val offset =
+          Offset.Internal(NonEmptyList.one(Field("off")), ∃(InternalKey.Actual.string("baz")))
+
+        val expected = List(
+          obj("id" -> rLong(2), "off" -> rString("baz")),
+          obj("id" -> rLong(0), "off" -> rString("foo")))
+
+        setup.transact(xa) >> seekRValues(ds, path, offset) map { results =>
+          results must containTheSameElementsAs(expected)
+        }
+      }
+    }
+    "numeric offset" >> {
+      harnessed() use { case (xa, ds, path, name) =>
+        val setup =
+          (fr"CREATE TABLE" ++ frag(name) ++ fr0" (id INT, off INT)").update.run >>
+          (fr"INSERT INTO" ++ frag(name) ++ fr0" VALUES (0, 1), (1, 2), (2, 3), (3, 4), (4, 5)").update.run
+
+        val offset =
+          Offset.Internal(NonEmptyList.one(Field("off")), ∃(InternalKey.Actual.real(3)))
+
+        val expected = List(
+          obj("id" -> rLong(2), "off" -> rLong(3)),
+          obj("id" -> rLong(3), "off" -> rLong(4)),
+          obj("id" -> rLong(4), "off" -> rLong(5)))
+
+        setup.transact(xa) >> seekRValues(ds, path, offset) map { results =>
+          results must containTheSameElementsAs(expected)
+        }
+      }
+    }
+    "dateTime offset" >> {
+      harnessed() use { case (xa, ds, path, name) =>
+        val setup =
+          (fr"CREATE TABLE" ++ frag(name) ++ fr0" (id TEXT, off TIMESTAMP(6))").update.run >>
+          (fr"INSERT INTO" ++ frag(name) ++ fr" VALUES ('a', '2001-11-11 11:11:11.111000')," ++
+            fr"('b', '2002-02-02 11:11:11.110001')," ++
+            fr"('c', '2003-12-12 12:12:12.100021')," ++
+            fr"('d', '2004-08-13 13:13:13.000131')").update.run
+
+        val offset =
+          Offset.Internal(NonEmptyList.one(Field("off")), ∃(InternalKey.Actual.dateTime(
+            OffsetDateTime.parse("2003-12-12T12:12:12.100021+00:00"))))
+
+        val expected = List(
+          obj("id" -> rString("c"), "off" -> rLocalDateTime(LocalDateTime.parse("2003-12-12T12:12:12.100021"))),
+          obj("id" -> rString("d"), "off" -> rLocalDateTime(LocalDateTime.parse("2004-08-13T13:13:13.000131"))))
+
+
+        setup.transact(xa) >> seekRValues(ds, path, offset) map { results =>
+          results must containTheSameElementsAs(expected)
         }
       }
     }
