@@ -74,7 +74,7 @@ private[datasource] object MariaDbDatasource {
           DefaultResultChunkSize,
           MariaDbRValueColumn,
           offsetFragment)
-        .compose(maskInterpreter.andThen(Resource.liftF(_)))
+        .compose(maskInterpreter.andThen(Resource.eval(_)))
       }
 
     JdbcDatasource(
