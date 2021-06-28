@@ -97,3 +97,4 @@ lazy val datasource = project
   .enablePlugins(QuasarPlugin)
   .evictToLocal("QUASAR_PATH", "connector", true)
   .evictToLocal("QUASAR_PATH", "api", true)
+  .evictToLocal("QUASAR_LIB_JDBC_PATH", "core", true)

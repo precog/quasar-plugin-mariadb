@@ -41,7 +41,7 @@ import quasar.api.push.{InternalKey, ExternalOffsetKey}
 import quasar.api.resource.ResourcePath
 import quasar.common.data.RValue
 import quasar.connector.{QueryResult, Offset}
-import quasar.connector.datasource.LightweightDatasourceModule
+import quasar.connector.datasource.DatasourceModule
 import quasar.lib.jdbc.JdbcDiscovery
 import quasar.qscript.InterpretedRead
 
@@ -50,7 +50,7 @@ import skolems.∃
 object MariaDbDatasourceSpec extends TestHarness with Logging {
   import RValue._
 
-  type DS = LightweightDatasourceModule.DS[IO]
+  type DS = DatasourceModule.DS[IO]
 
   sequential
 
