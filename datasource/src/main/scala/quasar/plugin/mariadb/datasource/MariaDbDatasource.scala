@@ -34,7 +34,7 @@ import doobie.implicits._
 import quasar.api.{ColumnType, DataPathSegment}
 import quasar.api.push.InternalKey
 import quasar.connector.{MonadResourceErr, Offset}
-import quasar.connector.datasource.{LightweightDatasourceModule, Loader}
+import quasar.connector.datasource.{DatasourceModule, Loader}
 import quasar.lib.jdbc._
 import quasar.lib.jdbc.datasource._
 
@@ -51,7 +51,7 @@ private[datasource] object MariaDbDatasource {
       xa: Transactor[F],
       discovery: JdbcDiscovery,
       log: Logger)
-      : LightweightDatasourceModule.DS[F] = {
+      : DatasourceModule.DS[F] = {
 
     val maskInterpreter =
       MaskInterpreter(MariaDbHygiene) { (table, schema) =>
