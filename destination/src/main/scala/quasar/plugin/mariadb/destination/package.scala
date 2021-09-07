@@ -24,7 +24,7 @@ package object destination {
   val MariaDbCsvConfig: RenderConfig.Csv =
     RenderConfig.Csv(
       includeHeader = false,
-      nullSentinel = Some("NULL"),
+      undefinedSentinel = Some("NULL"),
       includeBom = false,
       booleanFormat = if (_) "1" else "0")
 }
