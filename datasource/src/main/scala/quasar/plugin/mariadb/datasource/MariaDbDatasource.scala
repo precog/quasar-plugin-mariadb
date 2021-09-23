@@ -84,13 +84,12 @@ private[datasource] object MariaDbDatasource {
       NonEmptyList.one(Loader.Batch(loader)))
   }
 
-  private def offsetFragment(offset: Offset): Either[String, Fragment] = {
-    internalize(offset) flatMap { ioffset =>
-      columnFragment(ioffset) map { cfr =>
-        offsetFragment(cfr, ioffset.value)
-      }
-    }
-  }
+  private def offsetFragment(offset: Offset): Either[String, Fragment] =
+    for {
+      ioffset <- internalize(offset)
+      cfr <- columnFragment(ioffset)
+      result <- makeOffsetFr(cfr, ioffset.value)
+    } yield result
 
   private def internalize(offset: Offset)
       : Either[String, Offset.Internal] = offset match {
@@ -108,22 +107,35 @@ private[datasource] object MariaDbDatasource {
       Left(s"Incorrect offset path")
   }
 
-  private def offsetFragment(colFragment: Fragment, key: ∃[InternalKey.Actual]): Fragment = {
+  private def makeOffsetFr(colFr: Fragment, key: ∃[InternalKey.Actual]): Either[String, Fragment] = {
     val actual: InternalKey[Id, _] = key.value
 
     val actualFragment = actual match {
       case InternalKey.RealKey(k) =>
-        Fragment.const(k.toString)
+        Right(Fragment.const(k.toString))
 
       case InternalKey.StringKey(s) =>
-        fr0"'" ++ Fragment.const0(s) ++ fr0"'"
+        Right(fr0"'" ++ Fragment.const0(s) ++ fr0"'")
 
       case InternalKey.DateTimeKey(d) =>
         val formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss.SSSSSS")
         val str = formatter.format(d)
-        fr0"'" ++ Fragment.const0(str) ++ fr0"'"
+        Right(fr0"'" ++ Fragment.const0(str) ++ fr0"'")
+
+      case InternalKey.LocalDateTimeKey(d) =>
+        val formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss.SSSSSS")
+        val str = formatter.format(d)
+        Right(fr0"'" ++ Fragment.const0(str) ++ fr0"'")
+
+      case InternalKey.LocalDateKey(d) =>
+        Right(fr0"'" ++ Fragment.const0(d.toString) ++ fr0"'")
+
+      case InternalKey.DateKey(d) =>
+        Left("MariaDb/MySQL datasource doesn't support OffsetDate offsets")
     }
 
-    colFragment ++ fr">=" ++ actualFragment
+    actualFragment map { afr =>
+      fr"$colFr >=  $afr"
+    }
   }
 }
