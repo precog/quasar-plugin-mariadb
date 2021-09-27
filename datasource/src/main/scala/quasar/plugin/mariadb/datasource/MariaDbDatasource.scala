@@ -107,6 +107,8 @@ private[datasource] object MariaDbDatasource {
       Left(s"Incorrect offset path")
   }
 
+  private val Formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss.SSSSSS")
+
   private def makeOffsetFr(colFr: Fragment, key: ∃[InternalKey.Actual]): Either[String, Fragment] = {
     val actual: InternalKey[Id, _] = key.value
 
@@ -118,13 +120,11 @@ private[datasource] object MariaDbDatasource {
         Right(fr0"'" ++ Fragment.const0(s) ++ fr0"'")
 
       case InternalKey.DateTimeKey(d) =>
-        val formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss.SSSSSS")
-        val str = formatter.format(d)
+        val str = Formatter.format(d)
         Right(fr0"'" ++ Fragment.const0(str) ++ fr0"'")
 
       case InternalKey.LocalDateTimeKey(d) =>
-        val formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss.SSSSSS")
-        val str = formatter.format(d)
+        val str = Formatter.format(d)
         Right(fr0"'" ++ Fragment.const0(str) ++ fr0"'")
 
       case InternalKey.LocalDateKey(d) =>
