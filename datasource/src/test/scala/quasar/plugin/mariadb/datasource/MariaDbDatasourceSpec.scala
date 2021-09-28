@@ -408,5 +408,51 @@ object MariaDbDatasourceSpec extends TestHarness with Logging {
         }
       }
     }
+    "localDateTime offset" >> {
+      harnessed() use { case (xa, ds, path, name) =>
+        val setup =
+          (fr"CREATE TABLE" ++ frag(name) ++ fr0" (id TEXT, off TIMESTAMP(6))").update.run >>
+          (fr"INSERT INTO" ++ frag(name) ++ fr" VALUES ('a', '2001-11-11 11:11:11.111000')," ++
+            fr"('b', '2002-02-02 11:11:11.110001')," ++
+            fr"('c', '2003-12-12 12:12:12.100021')," ++
+            fr"('d', '2004-08-13 13:13:13.000131')").update.run
+
+        val offset =
+          Offset.Internal(NonEmptyList.one(Field("off")), ∃(InternalKey.Actual.localDateTime(
+            LocalDateTime.parse("2003-12-12T12:12:12.100021"))))
+
+        val expected = List(
+          obj("id" -> rString("c"), "off" -> rLocalDateTime(LocalDateTime.parse("2003-12-12T12:12:12.100021"))),
+          obj("id" -> rString("d"), "off" -> rLocalDateTime(LocalDateTime.parse("2004-08-13T13:13:13.000131"))))
+
+
+        setup.transact(xa) >> seekRValues(ds, path, offset) map { results =>
+          results must containTheSameElementsAs(expected)
+        }
+      }
+    }
+    "localDate offset" >> {
+      harnessed() use { case (xa, ds, path, name) =>
+        val setup =
+          (fr"CREATE TABLE" ++ frag(name) ++ fr0" (id TEXT, off TIMESTAMP(6))").update.run >>
+          (fr"INSERT INTO" ++ frag(name) ++ fr" VALUES ('a', '2001-11-11 11:11:11.111000')," ++
+            fr"('b', '2002-02-02 11:11:11.110001')," ++
+            fr"('c', '2003-12-12 12:12:12.100021')," ++
+            fr"('d', '2004-08-13 13:13:13.000131')").update.run
+
+        val offset =
+          Offset.Internal(NonEmptyList.one(Field("off")), ∃(InternalKey.Actual.localDate(
+            LocalDate.parse("2003-12-12"))))
+
+        val expected = List(
+          obj("id" -> rString("c"), "off" -> rLocalDateTime(LocalDateTime.parse("2003-12-12T12:12:12.100021"))),
+          obj("id" -> rString("d"), "off" -> rLocalDateTime(LocalDateTime.parse("2004-08-13T13:13:13.000131"))))
+
+
+        setup.transact(xa) >> seekRValues(ds, path, offset) map { results =>
+          results must containTheSameElementsAs(expected)
+        }
+      }
+    }
   }
 }
